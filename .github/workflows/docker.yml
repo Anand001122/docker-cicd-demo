@@ -9,6 +9,10 @@ on:
       - main
 
 jobs:
+
+  # -------------------------
+  # 1. TEST
+  # -------------------------
   test:
     runs-on: ubuntu-latest
 
@@ -27,6 +31,10 @@ jobs:
       - name: Run tests
         run: npm test
 
+
+  # -------------------------
+  # 2. BUILD
+  # -------------------------
   build:
     needs: test
     runs-on: ubuntu-latest
@@ -35,5 +43,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Build Docker image
         run: docker build -t docker-cicd-demo:${{ github.sha }} .
+
+
+  # -------------------------
+  # 3. SECURITY SCAN
+  # -------------------------
+  security-scan:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t docker-cicd-demo:${{ github.sha }} .
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: docker-cicd-demo:${{ github.sha }}
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
